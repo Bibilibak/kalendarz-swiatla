@@ -9,7 +9,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="css/app.css?v=1">
+<link rel="stylesheet" href="css/app.css?v=2">
 </head>
 <body>
 <header class="top">
@@ -44,7 +44,7 @@
         <ul class="evList" id="evList"></ul>
         <form id="evForm" class="card" autocomplete="off">
           <h3 id="fTitle">Nowe wydarzenie</h3>
-          <label class="wide">Nazwa <input id="fName" required maxlength="120" placeholder="np. Spotkanie"></label>
+          <label class="wide">Nazwa <input id="fName" required maxlength="120" pattern=".*\S.*" title="Wpisz nazwę wydarzenia" placeholder="np. Spotkanie"></label>
           <div class="row">
             <label>Początek
               <span class="degIn"><input id="fDeg" type="number" min="0" max="359" step="1" required placeholder="0">°
@@ -73,6 +73,7 @@
             <button type="button" id="fCancel" hidden>Anuluj</button>
             <button type="button" id="fDel" class="danger" hidden>Usuń</button>
           </div>
+          <p class="hint err" id="dMsg" role="alert"></p>
         </form>
       </div>
     </div>
@@ -124,7 +125,7 @@
 
 <script src="js/astro.js?v=1"></script>
 <script src="js/orbit.js?v=1"></script>
-<script src="js/place.js?v=1"></script>
-<script src="js/app.js?v=1"></script>
+<script src="js/place.js?v=2"></script>
+<script src="js/app.js?v=2"></script>
 </body>
 </html>

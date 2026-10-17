@@ -7,7 +7,7 @@ var Place = (function () {
 
   function apply(p) { lat = p.lat; lon = p.lon; tz = p.tz || ""; place = p.name || degName(p) }
   function degName(p) { return Math.abs(p.lat).toFixed(2) + "°" + (p.lat < 0 ? "S" : "N") + " " + Math.abs(p.lon).toFixed(2) + "°" + (p.lon < 0 ? "W" : "E") }
-  function valid(p) { return p && validCoords(p.lat, p.lon) && (p.tz === undefined || typeof p.tz === "string") }
+  function valid(p) { return p && validCoords(p.lat, p.lon) && (p.tz === undefined || typeof p.tz === "string") && (p.name === undefined || typeof p.name === "string") }
 
   // zapisane miejsce (albo null); ustawia lat / lon / tz
   function load() {
@@ -34,7 +34,8 @@ var Place = (function () {
     q.oninput = function () {
       clearTimeout(timer);
       var s = q.value.trim();
-      if (s.length < 2) { id++; res.innerHTML = ""; return }
+      id++; res.innerHTML = "";   // stare wyniki znikają od razu: Enter nie wybierze miasta z poprzedniego wyszukiwania
+      if (s.length < 2) { say(""); return }
       timer = setTimeout(function () {
         var my = ++id;
         say("Szukam…");
@@ -43,7 +44,7 @@ var Place = (function () {
           .then(function (d) {
             if (my !== id) return;
             res.innerHTML = ""; say(d.results && d.results.length ? "" : "Nie znaleziono.");
-            (d.results || []).forEach(function (c) {
+            (d.results || []).filter(function (c) { return validCoords(+c.latitude, +c.longitude) }).forEach(function (c) {
               var b = document.createElement("button");
               b.type = "button";
               b.textContent = [c.name, c.admin1 && c.admin1 !== c.name ? c.admin1 : "", c.country || ""].filter(Boolean).join(", ");

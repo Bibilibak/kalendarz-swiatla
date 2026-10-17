@@ -122,3 +122,5 @@ dialog::backdrop { background: rgb(20 16 12 / .55) }
 dialog p { margin: 6px 0 14px }
 .link { background: none; border: 0; color: var(--mut); text-decoration: underline; margin-top: 8px }
 :focus-visible { outline: 2px solid var(--sun); outline-offset: 2px }
+.err { color: var(--danger) }
+.err:empty { display: none }

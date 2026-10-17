@@ -9,10 +9,12 @@
 
   /* ===== Zapis wydarzeń ===== */
   function validEv(e) {
-    return e && typeof e.name === "string" && e.name && typeof e.n === "number" && e.n % 1 === 0 &&
+    // n: doby z lat 1000–3000, jak w generatorze druku (dalsze daty psują obliczenia stref czasowych)
+    return e && typeof e.name === "string" && e.name.trim() && typeof e.n === "number" && e.n % 1 === 0 && e.n >= N_MIN && e.n <= N_MAX &&
       typeof e.deg === "number" && e.deg >= 0 && e.deg < 360 && (!e.len || typeof e.len === "number" && e.len >= 0 && e.len <= 360) &&
       ["", "d", "10", "m", "y"].indexOf(e.rep || "") >= 0
   }
+  var N_MIN = Math.round(Date.UTC(1000, 0, 1) / 864e5), N_MAX = Math.round(Date.UTC(3000, 11, 31) / 864e5);
   function clean(e) {
     return { id: typeof e.id === "string" && e.id ? e.id : newId(), n: e.n, deg: e.deg, len: e.len || 0, name: e.name.slice(0, 120),
       note: typeof e.note === "string" ? e.note.slice(0, 2000) : "", rep: e.rep || "" }
@@ -21,8 +23,9 @@
   function loadEv() {
     try { var a = JSON.parse(localStorage.getItem(EV_KEY) || "[]"); if (Array.isArray(a)) evs = a.filter(validEv).map(clean) } catch (e) {}
   }
-  function saveEv() { try { localStorage.setItem(EV_KEY, JSON.stringify(evs)) } catch (e) { alertMsg("Nie udało się zapisać (pamięć przeglądarki).") } }
-  function alertMsg(t) { $("sMsg").textContent = t }
+  function saveEv() { try { localStorage.setItem(EV_KEY, JSON.stringify(evs)); $("dMsg").textContent = "" } catch (e) { alertMsg("Nie udało się zapisać (pamięć przeglądarki jest pełna albo zablokowana). Zapisz kopię do pliku w Ustawieniach.", true) } }
+  // komunikat w Ustawieniach i pod formularzem doby (błąd zapisu musi być widoczny tam, gdzie jesteś)
+  function alertMsg(t, err) { $("sMsg").textContent = t; if (err) $("dMsg").textContent = t }
 
   // czy wydarzenie e wypada w dobie n
   function occurs(e, n) {
@@ -74,7 +77,7 @@
       h += '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="5" class="evDot"><title>' + esc(degStr(e.deg, true) + " " + e.name) + '</title></circle>'
     });
     // znaczniki: wschód, górowanie, zachód
-    if (!info.polar) {
+    if (!info.polar && L !== null) {   // koniec nocy polarnej (noDay): wschód bez zachodu
       h += mark(0, "wschód") + mark(L, "zachód");
     }
     h += mark(noon, "górowanie", true);
@@ -186,14 +189,15 @@
   $("fConv").onclick = function () {
     var v = $("fClock").value; if (!v || !info) return;
     var hh = +v.slice(0, 2), mm = +v.slice(3, 5), d = OrbitCal.dateOf(sel), ms;
-    for (var k = 0; k < 2; k++) {
+    // doba może zacząć się poprzedniego dnia kalendarzowego (noc polarna, strefa daleko od czasu słonecznego)
+    for (var k = -1; k < 2; k++) {
       ms = tz ? zoned(d.getFullYear(), d.getMonth(), d.getDate() + k, hh, mm) : new Date(d.getFullYear(), d.getMonth(), d.getDate() + k, hh, mm).getTime();
       if (ms >= info.a && ms < info.b) break
     }
     if (ms < info.a || ms >= info.b) { $("fConvOut").textContent = "Ta godzina nie wypada w tej dobie."; return }
     var g = degOf(info, ms);
     $("fDeg").value = Math.floor(g); $("fMin").value = Math.floor((g % 1) * 60);
-    $("fConvOut").textContent = v + " = " + degStr(g, true) + " od wschodu" + (k ? " (rano następnego dnia)" : "")
+    $("fConvOut").textContent = v + " = " + degStr(g, true) + " od wschodu" + (k > 0 ? " (następnego dnia rano)" : k < 0 ? " (dzień wcześniej)" : "")
   };
 
   function renderDay() { header(); drawDial(); facts(); list() }
@@ -215,7 +219,7 @@
       es.forEach(function (e) { if (n >= today && upcoming.length < 40) upcoming.push({ n: n, e: e, day: i + 1 }) })
     }
     g.innerHTML = h;
-    [].forEach.call(g.querySelectorAll(".md"), function (b) { b.onclick = function () { sel = +b.getAttribute("data-n"); show("day") } });
+    [].forEach.call(g.querySelectorAll(".md"), function (b) { b.onclick = function () { sel = +b.getAttribute("data-n"); resetForm(); show("day") } });
     $("mList").innerHTML = upcoming.length ? upcoming.map(function (u) {
       return '<li><b>Dzień ' + u.day + '</b> ' + degStr(u.e.deg) + ' · ' + esc(u.e.name) + '</li>'
     }).join("") : '<li class="empty">' + (n0 + len <= today ? "" : "Brak nadchodzących wydarzeń w tym miesiącu.") + '</li>'
@@ -226,11 +230,13 @@
 
   /* ===== Widoki ===== */
   function show(v) {
+    if (!place) { askPlace(); return }   // bez miejsca nie ma dób
     view = v;
     [].forEach.call(document.querySelectorAll(".tabs [role=tab]"), function (b) { b.setAttribute("aria-selected", b.getAttribute("data-v") === v) });
     $("vDay").hidden = v !== "day"; $("vMonth").hidden = v !== "month"; $("vSet").hidden = v !== "set";
     if (v === "day") renderDay();
-    if (v === "month") { monthOf(sel); renderMonth(); header() }
+    else header();
+    if (v === "month") { monthOf(sel); renderMonth() }
     try { localStorage.setItem(VIEW_KEY, v) } catch (e) {}
   }
   [].forEach.call(document.querySelectorAll(".tabs [role=tab]"), function (b) { b.onclick = function () { show(b.getAttribute("data-v")) } });
@@ -253,12 +259,15 @@
     f.text().then(function (txt) {
       var d = JSON.parse(txt), list = Array.isArray(d) ? d : d && d.events;
       if (!Array.isArray(list)) throw new Error("brak listy wydarzeń");
-      var ok = list.filter(validEv).map(clean), ids = {}, added = 0;
-      evs.forEach(function (e) { ids[e.id] = e });
-      ok.forEach(function (e) { if (ids[e.id]) Object.assign(ids[e.id], e); else { evs.push(e); added++ } });   // to samo id: nadpisz, nowe: dodaj
+      // Map, nie zwykły obiekt: id "__proto__" czy "toString" z pliku nie może trafić w prototyp
+      var ok = list.filter(validEv).map(clean), ids = new Map(), added = 0;
+      evs.forEach(function (e) { ids.set(e.id, e) });
+      ok.forEach(function (e) {   // to samo id: nadpisz, nowe: dodaj (także powtórzone id w jednym pliku trafia tylko raz)
+        if (ids.has(e.id)) Object.assign(ids.get(e.id), e); else { evs.push(e); ids.set(e.id, e); added++ }
+      });
       saveEv();
       alertMsg("Wczytano " + ok.length + " wydarzeń (nowych: " + added + ")" + (ok.length < list.length ? ", pominięto błędnych: " + (list.length - ok.length) : "") + ".");
-      if (d.place && Place.valid(d.place) && !Place.current()) setPlace(d.place)
+      if (view === "day") renderDay()
     }).catch(function (e) { alertMsg("Nie udało się wczytać pliku: " + e.message) })
       .then(function () { inp.value = "" })
   };
@@ -275,18 +284,28 @@
   Place.form($("dlgForm"), setPlace);
   $("placeBtn").onclick = function () { $("dlgClose").hidden = false; $("placeDlg").showModal() };
   $("dlgClose").onclick = function () { $("placeDlg").close() };
+  // Bez miejsca okno wraca: przeglądarki pozwalają zamknąć je Esc albo gestem „wstecz”, mimo preventDefault
+  function askPlace() { $("dlgClose").hidden = true; if (!$("placeDlg").open) $("placeDlg").showModal() }
+  $("placeDlg").addEventListener("cancel", function (e) { if (!place) e.preventDefault() });
+  $("placeDlg").addEventListener("close", function () { if (!place) setTimeout(askPlace, 0) });
 
   /* ===== Start ===== */
   loadEv();
   try { var v0 = localStorage.getItem(VIEW_KEY); if (v0 === "month" || v0 === "set") view = v0 } catch (e) {}
   if (Place.load()) { today = sel = sunDay(Date.now()); show(view) }
-  else { $("placeDlg").showModal(); $("placeDlg").addEventListener("cancel", function (e) { if (!place) e.preventDefault() }) }
+  else askPlace();
 
   // co sekundę wskazówka; o wschodzie Słońca zaczyna się nowa doba
   setInterval(function () {
     if (!place) return;
     var t = sunDay(Date.now());
-    if (t !== today) { if (sel === today) sel = t; today = t; show(view) }
+    if (t !== today) {
+      // wybrana doba idzie za „dziś”, chyba że właśnie wpisujesz albo zmieniasz wydarzenie
+      if (sel === today && !edit && !$("fName").value) sel = t;
+      today = t;
+      if (view === "month") { renderMonth(); header() }   // zostaje miesiąc, który oglądasz
+      else show(view)
+    }
     else if (view === "day") tickDial()
   }, 1000);
 

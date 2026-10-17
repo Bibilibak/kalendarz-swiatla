@@ -154,6 +154,12 @@
 
   /* ===== Ustawienia ===== */
   var qp = { lat: parseFloat(Q.get("lat")), lon: parseFloat(Q.get("lon")), tz: Q.get("tz") || "", name: Q.get("name") || "" };
+  // nieznana strefa z adresu: bez strefy (czas słoneczny miejsca) i ostrzeżenie, zamiast cicho brać strefę urządzenia
+  if (qp.tz) try { new Intl.DateTimeFormat("en", { timeZone: qp.tz }) } catch (e) {
+    var w = document.createElement("p"); w.className = "hint";
+    w.textContent = "Nieznana strefa czasowa „" + qp.tz + "”: daty dób liczone według czasu słonecznego miejsca.";
+    $("ctl").appendChild(w); qp.tz = ""
+  }
   if (validCoords(qp.lat, qp.lon)) Place.apply(qp); else Place.load();
   layout = Q.get("layout") === "planner" ? "planner" : "wall";
   Y = parseInt(Q.get("y"), 10);
