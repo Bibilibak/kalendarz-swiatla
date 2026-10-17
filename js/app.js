@@ -34,7 +34,8 @@
     if (e.rep === "d") return true;
     if (e.rep === "10") return (n - e.n) % 10 === 0;
     var a = OrbitCal.date(OrbitCal.dateOf(e.n)), b = OrbitCal.date(OrbitCal.dateOf(n));
-    return a.day === b.day && (e.rep === "m" || a.month === b.month)
+    // dzień 31 albo 32 w krótszym miesiącu: ostatni dzień miesiąca (miesiące orbity mają 29–32 dni)
+    return Math.min(a.day, b.len) === b.day && (e.rep === "m" || a.month === b.month)
   }
   function evsOn(n) { return evs.filter(function (e) { return occurs(e, n) }).sort(function (a, b) { return a.deg - b.deg }) }
 

@@ -1,7 +1,7 @@
 /* Service worker: aplikacja działa offline (pliki z pamięci podręcznej, w tle sprawdzamy nowe wersje).
    Po zmianie plików podnieś numer wersji w CACHE. */
-var CACHE = "ks-v2", FILES = ["./", "index.html", "druk.html", "css/app.css?v=2", "css/print.css?v=2", "js/astro.js?v=1", "js/orbit.js?v=1",
-  "js/place.js?v=2", "js/app.js?v=2", "js/print.js?v=2", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png"];
+var CACHE = "ks-v3", FILES = ["./", "index.html", "druk.html", "css/app.css?v=2", "css/print.css?v=2", "js/astro.js?v=1", "js/orbit.js?v=1",
+  "js/place.js?v=2", "js/app.js?v=3", "js/print.js?v=2", "manifest.webmanifest", "icon.svg", "icon-192.png", "icon-512.png"];
 self.addEventListener("install", function (e) { e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(FILES) }).then(function () { return self.skipWaiting() })) });
 self.addEventListener("activate", function (e) {
   e.waitUntil(caches.keys().then(function (k) { return Promise.all(k.filter(function (n) { return n !== CACHE }).map(function (n) { return caches.delete(n) })) }).then(function () { return self.clients.claim() }))
