@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kalendarz światła — druk</title>
+<meta name="description" content="Generator kalendarza orbity do druku (A5): kalendarz ścienny i planer z dekadą na rozkładówkę.">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/print.css?v=1">
+<style id="pageSize"></style>
+</head>
+<body>
+<div class="ctl" id="ctl">
+  <h1>Kalendarz światła — druk</h1>
+  <p><a href="index.html">← aplikacja</a></p>
+  <div class="ctlRow">
+    <label>Rok orbity <input type="number" id="cY" min="1000" max="3000" step="1"></label>
+    <label>Układ
+      <select id="cL">
+        <option value="wall">Ścienny (A5 poziomo, miesiąc na stronę)</option>
+        <option value="planner">Planer (A5 pionowo, dekada na rozkładówkę)</option>
+      </select>
+    </label>
+    <button type="button" id="cGo">Pokaż</button>
+    <button type="button" id="cPrint" class="main">Drukuj / zapisz PDF</button>
+  </div>
+  <p>Miejsce: <b id="cPlace">nie wybrano</b> · <button type="button" class="link" id="cPlaceBtn">zmień</button></p>
+  <div id="cPlaceForm" class="placeForm" hidden></div>
+  <p class="hint">W oknie drukowania wybierz „Zapisz jako PDF”, rozmiar A5 i marginesy „Brak” (albo „Domyślne”). Żeby wydrukować na A4, wybierz 2 strony na arkusz.</p>
+</div>
+<div id="out"></div>
+
+<script src="js/astro.js?v=1"></script>
+<script src="js/orbit.js?v=1"></script>
+<script src="js/place.js?v=1"></script>
+<script src="js/print.js?v=1"></script>
+</body>
+</html>

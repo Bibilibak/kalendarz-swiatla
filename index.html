@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kalendarz światła</title>
+<meta name="description" content="Kalendarz orbity i doba w stopniach od wschodu Słońca: terminy i wydarzenia dnia.">
+<meta name="theme-color" content="#f08a00">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="css/app.css?v=1">
+</head>
+<body>
+<header class="top">
+  <div class="title">
+    <h1 id="oDate">Kalendarz światła</h1>
+    <div class="sub" id="oSub"></div>
+  </div>
+  <button type="button" class="placeBtn" id="placeBtn" title="Zmień miejsce" hidden></button>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button type="button" role="tab" data-v="day" aria-selected="true">Doba</button>
+  <button type="button" role="tab" data-v="month" aria-selected="false">Miesiąc</button>
+  <button type="button" role="tab" data-v="set" aria-selected="false">Ustawienia</button>
+</nav>
+
+<main>
+  <!-- ===== Doba ===== -->
+  <section id="vDay" class="view">
+    <div class="nav">
+      <button type="button" id="dPrev" aria-label="Poprzednia doba">‹</button>
+      <button type="button" id="dToday" class="today">Dziś</button>
+      <button type="button" id="dNext" aria-label="Następna doba">›</button>
+    </div>
+    <div class="dayGrid">
+      <div class="dialBox">
+        <svg id="dial" viewBox="0 0 360 360" role="img" aria-label="Tarcza doby: 0° to wschód Słońca"></svg>
+        <div class="facts" id="facts"></div>
+      </div>
+      <div class="side">
+        <h2>Wydarzenia doby</h2>
+        <ul class="evList" id="evList"></ul>
+        <form id="evForm" class="card" autocomplete="off">
+          <h3 id="fTitle">Nowe wydarzenie</h3>
+          <label class="wide">Nazwa <input id="fName" required maxlength="120" placeholder="np. Spotkanie"></label>
+          <div class="row">
+            <label>Początek
+              <span class="degIn"><input id="fDeg" type="number" min="0" max="359" step="1" required placeholder="0">°
+              <input id="fMin" type="number" min="0" max="59" step="1" placeholder="00">′</span>
+            </label>
+            <label>Trwa <span class="degIn"><input id="fLen" type="number" min="0" max="360" step="0.5" placeholder="0">°</span></label>
+          </div>
+          <p class="hint">Kliknij tarczę, żeby wybrać kąt. 1° to ok. 4 minuty, 15° to ok. godzina.</p>
+          <details class="conv"><summary>Przelicz z godziny zegara</summary>
+            <label>Godzina <input id="fClock" type="time"></label>
+            <button type="button" id="fConv">Ustaw kąt</button>
+            <span id="fConvOut" class="hint"></span>
+          </details>
+          <label class="wide">Powtarzaj
+            <select id="fRep">
+              <option value="">Nie</option>
+              <option value="d">Każdej doby</option>
+              <option value="10">Co 10 dób (dekada)</option>
+              <option value="m">Co miesiąc (ten sam dzień miesiąca)</option>
+              <option value="y">Co rok (ten sam miesiąc i dzień)</option>
+            </select>
+          </label>
+          <label class="wide">Notatka <textarea id="fNote" rows="2" maxlength="2000"></textarea></label>
+          <div class="btns">
+            <button type="submit" class="main" id="fSave">Dodaj</button>
+            <button type="button" id="fCancel" hidden>Anuluj</button>
+            <button type="button" id="fDel" class="danger" hidden>Usuń</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Miesiąc ===== -->
+  <section id="vMonth" class="view" hidden>
+    <div class="nav">
+      <button type="button" id="mPrev" aria-label="Poprzedni miesiąc">‹</button>
+      <div class="mHead"><b id="mName"></b><span id="mSub"></span></div>
+      <button type="button" id="mNext" aria-label="Następny miesiąc">›</button>
+    </div>
+    <div class="mGrid" id="mGrid"></div>
+    <ul class="mList" id="mList"></ul>
+  </section>
+
+  <!-- ===== Ustawienia ===== -->
+  <section id="vSet" class="view" hidden>
+    <div class="card">
+      <h2>Miejsce</h2>
+      <p>Doba zaczyna się o wschodzie Słońca w tym miejscu. Teraz: <b id="sPlace"></b></p>
+      <div id="sPlaceForm" class="placeForm"></div>
+      <p class="hint">Wydarzenia są zapisane w stopniach doby, więc po zmianie miejsca zostają na tym samym kącie (np. 30° po wschodzie), a nie o tej samej godzinie.</p>
+    </div>
+    <div class="card">
+      <h2>Kopia zapasowa</h2>
+      <p>Wydarzenia są tylko w tej przeglądarce. Zapisz je do pliku, żeby je przenieść na inne urządzenie albo nie stracić.</p>
+      <div class="btns">
+        <button type="button" id="sExport" class="main">Zapisz do pliku</button>
+        <label class="fileBtn">Wczytaj z pliku <input type="file" id="sImport" accept=".json,application/json"></label>
+      </div>
+      <p class="hint" id="sMsg" aria-live="polite"></p>
+    </div>
+    <div class="card">
+      <h2>Kalendarz do druku</h2>
+      <p>Kalendarz ścienny i planer (dekada na rozkładówkę) w formacie A5 dla wybranego roku i miejsca.</p>
+      <a class="btnLink" href="druk.html">Otwórz generator PDF</a>
+    </div>
+  </section>
+</main>
+
+<!-- ===== Pierwsze uruchomienie: wybór miejsca ===== -->
+<dialog id="placeDlg" aria-labelledby="pdT">
+  <h2 id="pdT">Gdzie jesteś?</h2>
+  <p>Doba w tym kalendarzu zaczyna się o wschodzie Słońca, a godzina wschodu zależy od miejsca. Wybierz miasto albo użyj lokalizacji.</p>
+  <div id="dlgForm" class="placeForm"></div>
+  <button type="button" id="dlgClose" class="link" hidden>Zamknij</button>
+</dialog>
+
+<script src="js/astro.js?v=1"></script>
+<script src="js/orbit.js?v=1"></script>
+<script src="js/place.js?v=1"></script>
+<script src="js/app.js?v=1"></script>
+</body>
+</html>
